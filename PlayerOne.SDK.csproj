@@ -32,6 +32,24 @@
 	<EmbeddedResource Remove="demo/**" />
 	<None Remove="demo/**" />
 
+	<!--
+	  reference/ holds the VENDOR's own C# bindings, kept for reading and never compiled. Both
+	  sibling repos do the same thing without saying so: ZWOptical.SDK's ASICamera2.cs and
+	  QHYCCD.SDK's QHYCamera.cs are SharpAstro-authored against the C header, not the vendor's
+	  file. Ours will be too.
+
+	  Compiling the vendor file instead costs three things. It is not nullable-aware, so it emits
+	  six CS8601/CS8603 warnings that would have to be suppressed project-wide, which then hides
+	  the same class of bug in code we DO own. It does not implement ICMOSNativeInterface, so a
+	  wrapper would be a second layer over it. And it carries a 32/64 entry point split for every
+	  function, which this package does not need at all: the vendor ships both widths as
+	  PlayerOneCamera.dll under lib/x86 and lib/x64, so the RID already chose, and one DllImport
+	  per function resolves correctly on both.
+	-->
+	<Compile Remove="reference/**" />
+	<EmbeddedResource Remove="reference/**" />
+	<None Remove="reference/**" />
+
 	<None Include="license.txt" PackagePath="" Pack="True" />
 	<None Include="README.md" PackagePath="" Pack="true" />
 
