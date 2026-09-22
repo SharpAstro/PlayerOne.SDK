@@ -1,0 +1,126 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	<TargetFramework>net10.0</TargetFramework>
+	<Nullable>enable</Nullable>
+	<RootNamespace>PlayerOne.SDK</RootNamespace>
+	<AssemblyName>PlayerOne.SDK</AssemblyName>
+	<PackageLicenseFile>license.txt</PackageLicenseFile>
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	<DebugType>embedded</DebugType>
+	<PackageId>PlayerOne.SDK</PackageId>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
+	<PackageTags>Astronomy,PlayerOne,POA,Camera,FilterWheel</PackageTags>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	<RepositoryUrl>https://github.com/SharpAstro/PlayerOne.SDK</RepositoryUrl>
+	<PackageProjectUrl>https://github.com/SharpAstro/PlayerOne.SDK</PackageProjectUrl>
+	<PublishRepositoryUrl>true</PublishRepositoryUrl>
+	<EmbedUntrackedSources>true</EmbedUntrackedSources>
+	<Description>Implements accessing Player One cameras and filter wheels using .NET</Description>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	<CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	<CheckForOverflowUnderflow>False</CheckForOverflowUnderflow>
+  </PropertyGroup>
+
+  <ItemGroup>
+	<Compile Remove="demo/**" />
+	<EmbeddedResource Remove="demo/**" />
+	<None Remove="demo/**" />
+
+	<None Include="license.txt" PackagePath="" Pack="True" />
+	<None Include="README.md" PackagePath="" Pack="true" />
+
+	<!--
+	  Player One covers more of the RID space than either sibling: Windows x86 and x64, Linux x86,
+	  x64, arm32 and arm64, and macOS. ZWO ships nothing for macOS at all, so a Mac consumer of this
+	  package gets a camera where it would get none from the other.
+
+	  The macOS dylib is ONE FILE for both Mac RIDs: the vendor ships a universal binary carrying
+	  x86_64 and arm64 in the same file, so osx-x64 and osx-arm64 take the same bytes rather than
+	  the mapping being a copy-paste error.
+
+	  The Linux .so files are the versioned real files renamed. The vendor archive ships
+	  libPlayerOneCamera.so as a symlink chain down to libPlayerOneCamera.so.3.10.1, and a symlink
+	  is neither creatable on a plain Windows checkout nor meaningful inside a NuGet package, so the
+	  real file is committed under the name a DllImport resolves.
+	-->
+	<None Include="lib/x86/PlayerOneCamera.dll" PackagePath="runtimes/win-x86/native" Pack="True" />
+	<None Include="lib/x86/PlayerOnePW.dll" PackagePath="runtimes/win-x86/native" Pack="True" />
+	<None Include="lib/x64/PlayerOneCamera.dll" PackagePath="runtimes/win-x64/native" Pack="True" />
+	<None Include="lib/x64/PlayerOnePW.dll" PackagePath="runtimes/win-x64/native" Pack="True" />
+	<None Include="lib/x86/libPlayerOneCamera.so" PackagePath="runtimes/linux-x86/native" Pack="True" />
+	<None Include="lib/x86/libPlayerOnePW.so" PackagePath="runtimes/linux-x86/native" Pack="True" />
+	<None Include="lib/x64/libPlayerOneCamera.so" PackagePath="runtimes/linux-x64/native" Pack="True" />
+	<None Include="lib/x64/libPlayerOnePW.so" PackagePath="runtimes/linux-x64/native" Pack="True" />
+	<None Include="lib/arm32/libPlayerOneCamera.so" PackagePath="runtimes/linux-arm/native" Pack="True" />
+	<None Include="lib/arm32/libPlayerOnePW.so" PackagePath="runtimes/linux-arm/native" Pack="True" />
+	<None Include="lib/arm64/libPlayerOneCamera.so" PackagePath="runtimes/linux-arm64/native" Pack="True" />
+	<None Include="lib/arm64/libPlayerOnePW.so" PackagePath="runtimes/linux-arm64/native" Pack="True" />
+	<None Include="lib/osx/libPlayerOneCamera.dylib" PackagePath="runtimes/osx-x64/native" Pack="True" />
+	<None Include="lib/osx/libPlayerOnePW.dylib" PackagePath="runtimes/osx-x64/native" Pack="True" />
+	<None Include="lib/osx/libPlayerOneCamera.dylib" PackagePath="runtimes/osx-arm64/native" Pack="True" />
+	<None Include="lib/osx/libPlayerOnePW.dylib" PackagePath="runtimes/osx-arm64/native" Pack="True" />
+  </ItemGroup>
+
+  <!--
+    The PackagePath entries above serve the NuGet package, and ONLY it. The runtimes/rid/native
+    layout is a NuGet resolution mechanism, so a consumer taking this project by ProjectReference
+    gets the managed assembly and no native library at all. Every SharpAstro consumer does exactly
+    that on a dev box, because UseLocalSiblings self-enables when the sibling clone is present, and
+    a missing DllImport target looks the same as no camera being plugged in. ZWOptical.SDK shipped
+    for a while with this gap and the symptom was a ZWO camera that enumerated from the package and
+    not from source.
+
+    Copying beside the consumer's binary is the fix: the app directory is where the runtime probes
+    for a DllImport, whereas a runtimes folder in an output directory is not probed without the
+    deps.json entry only a package supplies. Update rather than a second Include, so the metadata
+    lands on the item declared above instead of duplicating it.
+  -->
+  <PropertyGroup>
+	<_PoaNativeRid Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</_PoaNativeRid>
+	<_PoaNativeRid Condition="'$(_PoaNativeRid)' == ''">$(NETCoreSdkPortableRuntimeIdentifier)</_PoaNativeRid>
+	<!-- Never empty past here, so the StartsWith calls below always have a string to run on. -->
+	<_PoaNativeRid Condition="'$(_PoaNativeRid)' == ''">unknown</_PoaNativeRid>
+
+	<_PoaNativeDir Condition="'$(_PoaNativeRid)' == 'win-x64' Or '$(_PoaNativeRid)' == 'linux-x64'">lib/x64</_PoaNativeDir>
+	<_PoaNativeDir Condition="'$(_PoaNativeRid)' == 'win-x86' Or '$(_PoaNativeRid)' == 'linux-x86'">lib/x86</_PoaNativeDir>
+	<_PoaNativeDir Condition="'$(_PoaNativeRid)' == 'linux-arm'">lib/arm32</_PoaNativeDir>
+	<_PoaNativeDir Condition="'$(_PoaNativeRid)' == 'linux-arm64'">lib/arm64</_PoaNativeDir>
+	<_PoaNativeDir Condition="$(_PoaNativeRid.StartsWith('osx-'))">lib/osx</_PoaNativeDir>
+
+	<_PoaNativePrefix Condition="$(_PoaNativeRid.StartsWith('linux-')) Or $(_PoaNativeRid.StartsWith('osx-'))">lib</_PoaNativePrefix>
+	<_PoaNativeSuffix Condition="$(_PoaNativeRid.StartsWith('win-'))">.dll</_PoaNativeSuffix>
+	<_PoaNativeSuffix Condition="$(_PoaNativeRid.StartsWith('linux-'))">.so</_PoaNativeSuffix>
+	<_PoaNativeSuffix Condition="$(_PoaNativeRid.StartsWith('osx-'))">.dylib</_PoaNativeSuffix>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(_PoaNativeDir)' != ''">
+	<None Update="$(_PoaNativeDir)/$(_PoaNativePrefix)PlayerOneCamera$(_PoaNativeSuffix)" Link="$(_PoaNativePrefix)PlayerOneCamera$(_PoaNativeSuffix)" CopyToOutputDirectory="PreserveNewest" />
+	<None Update="$(_PoaNativeDir)/$(_PoaNativePrefix)PlayerOnePW$(_PoaNativeSuffix)" Link="$(_PoaNativePrefix)PlayerOnePW$(_PoaNativeSuffix)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!--
+    Take TianWen.DAL from the sibling checkout when there is one, self-enabling on Exists().
+
+    Not a convenience. With an unconditional PackageReference, a consumer building both this
+    project and TianWen.DAL from source still pulled the PUBLISHED DAL in through here, so two
+    assemblies with the same simple name reached the compiler and it refused them (CS1704).
+    Raising the sibling's version only wins until CI publishes the next patch of that same minor,
+    so there is no version that stays ahead and the reference has to go away when the source is
+    present.
+
+    A build with no sibling, CI included, is unaffected and still restores the package.
+  -->
+  <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)..\TianWen.DAL\TianWen.DAL.csproj')">
+	<ProjectReference Include="..\TianWen.DAL\TianWen.DAL.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="!Exists('$(MSBuildThisFileDirectory)..\TianWen.DAL\TianWen.DAL.csproj')">
+	<PackageReference Include="TianWen.DAL" Version="3.0.*" />
+  </ItemGroup>
+
+</Project>
