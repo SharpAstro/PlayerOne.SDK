@@ -346,3 +346,11 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# The stock Visual Studio ignore list treats [Aa][Rr][Mm]64/ as a BUILD OUTPUT directory, and it
+# swallowed the vendor's arm64 natives under lib/arm64: they are vendored INPUTS, not output. The
+# csproj packs lib/arm64 into runtimes/linux-arm64/native, so a checkout without them fails the pack
+# with "Could not find a part of the path .../lib/arm64" and nothing before that says why. lib/arm32
+# was unaffected only because the neighbouring rule is [Aa][Rr][Mm]/, which does not match "arm32".
+!lib/arm64/
+!lib/arm64/**
