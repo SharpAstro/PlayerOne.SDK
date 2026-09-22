@@ -9,8 +9,9 @@ on:
 env:
   # The MAJOR.MINOR is not here: it lives in Directory.Build.props (VersionMajorMinor) and the build
   # job reads it back, so it cannot drift from what the package declares and a local dotnet pack
-  # stamps the same line CI does. Previously the csproj carried no version at all, so a local pack
-  # produced the SDK default 1.0.0 against a package whose real line is 4.2.
+  # stamps the same line CI does. The sibling repos learned this the hard way: with no version in
+  # the csproj a local pack produced the SDK default 1.0.0 against a package whose real line was
+  # already several majors on.
   VERSION_REV: ${{ github.run_attempt }}
   BUILD_CONF: Release
   # The build job CAPTURES a dotnet invocation's stdout to resolve the version, so the SDK's
@@ -70,12 +71,12 @@ jobs:
     # branch, from anyone who can open a PR, is what gets published.
     #
     # This is the condition the org pattern doc prescribes (.github/docs/dotnet-ci-pattern.md,
-    # "publish-nuget") and the one tianwen's own workflow already carries; this repo and QHYCCD.SDK
-    # were the two that omitted it. Both halves are needed: the event test alone would still let a
-    # push to some other branch publish, and the ref test alone would still let a PR TARGETING main
-    # publish, which is exactly the case that fired here.
+    # "publish-nuget"). Both halves are needed: the event test alone would still let a push to some
+    # other branch publish, and the ref test alone would still let a PR TARGETING main publish,
+    # which is exactly the case that fired in ZWOptical.SDK.
     #
-    # The fix is self-demonstrating: on a PR this job now reports as skipped rather than passing.
+    # It is here from the first commit rather than added after an incident, which is the whole
+    # reason the incident above is written down. On a PR this job reports as skipped, not passing.
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
