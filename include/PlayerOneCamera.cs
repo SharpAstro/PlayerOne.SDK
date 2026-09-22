@@ -339,6 +339,20 @@ public static partial class PlayerOneCamera
 
         public readonly int BitDepth => _bitDepth;
 
+        /// <summary>
+        /// True: this SDK hands over RAW16 LEFT-ALIGNED, so a 12-bit body spans 0..65520 in steps
+        /// of 16 rather than 0..4095.
+        /// </summary>
+        /// <remarks>
+        /// Measured rather than read off a datasheet: every pixel of a Uranus-C frame is a multiple
+        /// of 16 (value % 16 has one distinct result over the whole frame), the distinct levels step
+        /// 0, 16, 32, 48, and a 200 s dark peaks at 32048. SharpCap's own Uranus-C captures from 2023
+        /// carry the same quantum, which is what makes this the SDK's doing rather than any one
+        /// consumer's. Under binning the step divides by the bin squared (4 at bin 2), because
+        /// binning averages photosites; the alignment is unchanged.
+        /// </remarks>
+        public readonly bool DeliversContainerScaledPixels => true;
+
         public readonly double PixelSize => _pixelSize;
 
         public readonly BayerPattern BayerPattern => _isColorCamera is POABool.POA_TRUE
