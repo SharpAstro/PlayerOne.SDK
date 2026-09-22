@@ -20,7 +20,7 @@
          3.10.1. The filter wheel SDK is on its own line (1.2.3) and is deliberately NOT reflected
          here, because one package cannot carry two version lines and the camera is the larger
          surface; the filter wheel version is stated in the README instead. -->
-    <VersionMajorMinor>3.10</VersionMajorMinor>
+    <VersionMajorMinor>3.11</VersionMajorMinor>
     <!-- Local builds get Major.Minor.0; CI passes -p:Version=Major.Minor.<run><attempt>, and the
          condition lets it win. -->
     <VersionPrefix Condition="'$(VersionPrefix)' == ''">$(VersionMajorMinor).0</VersionPrefix>
