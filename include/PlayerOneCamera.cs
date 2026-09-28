@@ -14,6 +14,9 @@ namespace PlayerOne.SDK;
 /// </summary>
 public static partial class PlayerOneCamera
 {
+    /// <summary>Who has each camera open, so a listing or another connect never closes one a driver holds.</summary>
+    internal static readonly SharedSessions<int> CameraOpens = new SharedSessions<int>();
+
     /// <summary>
     /// Both widths ship as this one name (<c>lib/x86</c> and <c>lib/x64</c>), and the Unix builds
     /// are <c>libPlayerOneCamera.so</c> / <c>.dylib</c>, which the runtime prefixes and suffixes by
@@ -326,10 +329,12 @@ public static partial class PlayerOneCamera
             }
         }
 
+        // Counted (INativeDeviceInfo.Open): the first holder opens AND initialises, every later one shares the session, and
+        // only the last close ends it. Uncounted, a listing re-initialised a camera a driver held and then closed it.
         public readonly bool Open()
-            => POAOpenCamera(_cameraID) is POAErrors.POA_OK && POAInitCamera(_cameraID) is POAErrors.POA_OK;
+            => CameraOpens.Acquire(_cameraID, static id => POAOpenCamera(id) is POAErrors.POA_OK && POAInitCamera(id) is POAErrors.POA_OK);
 
-        public readonly bool Close() => POACloseCamera(_cameraID) is POAErrors.POA_OK;
+        public readonly bool Close() => CameraOpens.Release(_cameraID, static id => POACloseCamera(id) is POAErrors.POA_OK);
 
         // ---- What the sensor is -------------------------------------------------------------
 
