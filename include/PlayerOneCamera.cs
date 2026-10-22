@@ -331,8 +331,21 @@ public static partial class PlayerOneCamera
 
         // Counted (INativeDeviceInfo.Open): the first holder opens AND initialises, every later one shares the session, and
         // only the last close ends it. Uncounted, a listing re-initialised a camera a driver held and then closed it.
+        // A camera that opens and then refuses its init is closed again here (TianWen #1760): left open and uninitialised,
+        // with no holder recorded, nothing ever closed it, and it sat in the one state the SDK does not support.
         public readonly bool Open()
-            => CameraOpens.Acquire(_cameraID, static id => POAOpenCamera(id) is POAErrors.POA_OK && POAInitCamera(id) is POAErrors.POA_OK);
+            => CameraOpens.Acquire(_cameraID, static id => POAOpenCamera(id) is POAErrors.POA_OK && InitOrClose(id));
+
+        private static bool InitOrClose(int id)
+        {
+            if (POAInitCamera(id) is POAErrors.POA_OK)
+            {
+                return true;
+            }
+
+            _ = POACloseCamera(id);
+            return false;
+        }
 
         public readonly bool Close() => CameraOpens.Release(_cameraID, static id => POACloseCamera(id) is POAErrors.POA_OK);
 
