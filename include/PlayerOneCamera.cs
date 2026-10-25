@@ -798,7 +798,7 @@ public static partial class PlayerOneCamera
             case CMOSControlType.WB_R: config = POAConfig.POA_WB_R; return true;
             case CMOSControlType.WB_G: config = POAConfig.POA_WB_G; return true;
             case CMOSControlType.WB_B: config = POAConfig.POA_WB_B; return true;
-            case CMOSControlType.Brightness: config = POAConfig.POA_OFFSET; return true;
+            case CMOSControlType.BlackLevel: config = POAConfig.POA_OFFSET; return true;
             case CMOSControlType.BandwidthOverload: config = POAConfig.POA_USB_BANDWIDTH_LIMIT; return true;
             case CMOSControlType.TemperatureDeci: config = POAConfig.POA_TEMPERATURE; return true;
             case CMOSControlType.AutoMaxGain: config = POAConfig.POA_AUTOEXPO_MAX_GAIN; return true;
